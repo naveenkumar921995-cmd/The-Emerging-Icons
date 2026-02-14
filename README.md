@@ -1,16 +1,19 @@
 # The Emerging Icons 2.0
 
-This is a premium Streamlit app to showcase India’s next-generation entrepreneurs.
-Users can submit their stories, and admin can approve, feature, and manage stories with expiry dates.
+Premium Streamlit app to showcase India’s next-generation entrepreneurs.
 
 ## Features
-- Premium UI with gradient background and card shadows
-- Featured stories carousel
 - Story submission with image upload
-- Admin panel with login, logout, approve/feature stories, and expiry date control
+- Admin panel with login, logout, approve/feature stories
+- Expiry date for stories
 - Likes & views tracking
-- Responsive layout
+- Featured stories carousel
+- Premium gradient background & card design
 
-## Setup Instructions
+## Admin Login
+- Username: admin
+- Password: admin123
 
-1. Clone this repo:
+## Setup
+
+1. Clone the repo:
