@@ -57,42 +57,81 @@ def admin_login(user, pw):
     return cursor.fetchone()
 
 # ================= ULTRA PREMIUM CSS =================
+# ================= ULTRA PREMIUM CSS =================
 luxury_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap');
 
 body {
-    background: linear-gradient(160deg, #0b0b0b, #1c1c1c);
-    color:#e0e0e0; font-family:'Merriweather', serif;
+    background: linear-gradient(160deg, #0d0d0d, #1f1f1f); /* Dark premium background */
+    color:#e0e0e0; 
+    font-family:'Merriweather', serif;
 }
 
-h1,h2,h3 { color:#ffd700; text-shadow: 0px 0px 10px rgba(255,215,0,0.7); }
+h1,h2,h3 { 
+    color:#ffd700; /* Gold headings */
+    text-shadow: 0px 0px 15px rgba(255,215,0,0.9); 
+}
 
 .card {
-    background:#1a1a1a; 
+    background:linear-gradient(135deg, #1b1b1b, #2a2a2a); /* Gradient cards for depth */
     padding:25px; 
     border-radius:20px; 
-    box-shadow:0 0 60px rgba(255,215,0,0.15); 
+    box-shadow:0 0 60px rgba(255,215,0,0.2); 
     margin-bottom:30px; 
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.card:hover { transform: translateY(-10px); box-shadow:0 0 100px rgba(255,215,0,0.4); }
+.card:hover { 
+    transform: translateY(-10px); 
+    box-shadow:0 0 100px rgba(255,215,0,0.5); 
+}
 
 .logout-btn {
-    background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px;
-    float:right; margin-top:-50px; cursor:pointer;
+    background-color:#ffd700; 
+    color:#0b0b0b; 
+    font-weight:bold; 
+    border-radius:12px; 
+    padding:5px 15px;
+    float:right; 
+    margin-top:-50px; 
+    cursor:pointer;
 }
 
 .featured-carousel {
-    display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior: smooth;
+    display:flex; 
+    overflow-x:auto; 
+    gap:25px; 
+    padding:20px 0; 
+    scroll-behavior: smooth;
 }
+
 .featured-card {
-    min-width:320px; flex:0 0 auto; background:#222; border-radius:16px; padding:20px; 
-    box-shadow:0 0 40px rgba(255,215,0,0.2); transition: transform 0.3s ease;
+    min-width:320px; 
+    flex:0 0 auto; 
+    background:linear-gradient(135deg, #222, #333); 
+    border-radius:16px; 
+    padding:20px; 
+    box-shadow:0 0 40px rgba(255,215,0,0.3); 
+    transition: transform 0.3s ease;
 }
-.featured-card:hover { transform: translateY(-8px); box-shadow:0 0 70px rgba(255,215,0,0.5);}
-.counter { font-size:1.2rem; font-weight:bold; color:#ffd700; }
-.text-light { color:#f0f0f0 !important; }
+.featured-card:hover { 
+    transform: translateY(-8px); 
+    box-shadow:0 0 80px rgba(255,215,0,0.6);
+}
+
+.counter { 
+    font-size:1.2rem; 
+    font-weight:bold; 
+    color:#ffd700; 
+}
+
+.text-light { 
+    color:#f0f0f0 !important; 
+}
+
+p, span, label, td {
+    color:#e0e0e0; /* Ensure all text is readable on dark background */
+}
 </style>
 """
 st.markdown(luxury_style, unsafe_allow_html=True)
@@ -230,3 +269,4 @@ if menu == "Admin Login":
                 conn.commit()
                 st.success(f"Story '{s[2]}' featured ⭐")
             st.markdown("</div>", unsafe_allow_html=True)
+
