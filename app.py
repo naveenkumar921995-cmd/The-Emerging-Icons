@@ -11,10 +11,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================== SESSION STATE INIT ==================
+# ================== SESSION STATE ==================
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
-
+if "admin_user" not in st.session_state:
+    st.session_state["admin_user"] = None
 if "story_id" not in st.session_state:
     st.session_state["story_id"] = None
 
@@ -92,7 +93,6 @@ menu = st.sidebar.radio(
 if menu == "Home" and st.session_state["story_id"] is None:
     cursor.execute("SELECT * FROM stories WHERE approved=1 ORDER BY created_at DESC")
     stories = cursor.fetchall()
-
     story_to_open = None
 
     for s in stories:
@@ -152,12 +152,15 @@ if menu == "Featured Stories":
     cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1 ORDER BY created_at DESC")
     feats = cursor.fetchall()
 
-    for s in feats:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader(s[2])
-        st.write(f"**{s[1]}**")
-        st.write(s[4][:300] + "...")
-        st.markdown("</div>", unsafe_allow_html=True)
+    if not feats:
+        st.info("No featured stories available yet.")
+    else:
+        for s in feats:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            st.subheader(s[2])  # Story title
+            st.write(f"**{s[1]}**")  # Entrepreneur name
+            st.write(s[4][:300] + "...")  # Short excerpt
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== SUBMIT ==================
 if menu == "Submit Story":
@@ -196,13 +199,21 @@ if menu == "Admin Login":
         if st.button("Login"):
             if admin_login(user, pw):
                 st.session_state["admin_logged_in"] = True
-                st.success("Login successful! ✅")
-                # No st.experimental_rerun() here
+                st.session_state["admin_user"] = user
+                st.success(f"Login successful! Welcome, {user} ✅")
             else:
                 st.error("Invalid credentials")
     else:
-        st.info("You are logged in as Admin ✅")
+        st.info(f"You are logged in as Admin: {st.session_state['admin_user']} ✅")
 
+        # Logout button
+        if st.button("Logout"):
+            st.session_state["admin_logged_in"] = False
+            st.session_state["admin_user"] = None
+            st.success("Logged out successfully")
+            st.experimental_rerun()
+
+        # Pending stories
         cursor.execute("SELECT * FROM stories WHERE approved=0 ORDER BY created_at DESC")
         pending = cursor.fetchall()
 
@@ -217,7 +228,6 @@ if menu == "Admin Login":
             col1, col2 = st.columns(2)
             if col1.button("Approve", key=f"a{s[0]}"):
                 approve_id = s[0]
-
             if col2.button("Feature", key=f"f{s[0]}"):
                 feature_id = s[0]
 
@@ -227,10 +237,10 @@ if menu == "Admin Login":
             cursor.execute("UPDATE stories SET approved=1 WHERE id=?", (approve_id,))
             conn.commit()
             st.success("Story approved ✅")
-            st.experimental_rerun()  # Safe here after DB update
+            st.experimental_rerun()
 
         if feature_id:
             cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (feature_id,))
             conn.commit()
             st.success("Story featured ⭐")
-            st.experimental_rerun()  # Safe here after DB update
+            st.experimental_rerun()
