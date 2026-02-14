@@ -60,41 +60,17 @@ def admin_login(user, pw):
 luxury_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap');
-
-body {
-    background: linear-gradient(160deg, #0b0b0b, #1c1c1c);
-    color:#fff; font-family:'Merriweather', serif;
-}
-
+body {background: linear-gradient(160deg, #0b0b0b, #1c1c1c); color:#fff; font-family:'Merriweather', serif;}
 h1,h2,h3 { color:#ffd700; text-shadow: 0px 0px 10px rgba(255,215,0,0.7); }
-
-.card {
-    background:#1a1a1a; 
-    padding:25px; 
-    border-radius:20px; 
-    box-shadow:0 0 60px rgba(255,215,0,0.15); 
-    margin-bottom:30px; 
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+.card {background:#1a1a1a; padding:25px; border-radius:20px; box-shadow:0 0 60px rgba(255,215,0,0.15); margin-bottom:30px; transition: transform 0.3s ease, box-shadow 0.3s ease;}
 .card:hover { transform: translateY(-10px); box-shadow:0 0 100px rgba(255,215,0,0.4); }
-
-.logout-btn {
-    background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px;
-    float:right; margin-top:-50px; cursor:pointer;
-}
-
-.featured-carousel {
-    display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior: smooth;
-}
-.featured-card {
-    min-width:320px; flex:0 0 auto; background:#222; border-radius:16px; padding:20px; 
-    box-shadow:0 0 40px rgba(255,215,0,0.2); transition: transform 0.3s ease;
-}
+.logout-btn {background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px; float:right; margin-top:-50px; cursor:pointer;}
+.featured-carousel {display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior: smooth;}
+.featured-card {min-width:320px; flex:0 0 auto; background:#222; border-radius:16px; padding:20px; box-shadow:0 0 40px rgba(255,215,0,0.2); transition: transform 0.3s ease;}
 .featured-card:hover { transform: translateY(-8px); box-shadow:0 0 70px rgba(255,215,0,0.5);}
 .counter { font-size:1.2rem; font-weight:bold; color:#ffd700; }
 </style>
 """
-
 st.markdown(luxury_style, unsafe_allow_html=True)
 
 # ================= HEADER =================
@@ -151,7 +127,7 @@ if menu == "Home":
             st.experimental_rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= FULL STORY MODAL =================
+# ================= FULL STORY =================
 if "story_id" in st.session_state:
     sid = st.session_state["story_id"]
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
@@ -208,7 +184,9 @@ if menu == "Admin Login":
             else:
                 st.error("Invalid credentials")
     else:
-        if st.button("Logout", key="logout"):
+        # Floating Logout button
+        st.markdown("<button class='logout-btn'>Logout</button>", unsafe_allow_html=True)
+        if st.button("Logout", key="logout_btn"):
             del st.session_state["admin"]
             st.experimental_rerun()
 
