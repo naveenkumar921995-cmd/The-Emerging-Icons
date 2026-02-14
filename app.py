@@ -11,7 +11,15 @@ st.set_page_config(
     layout="wide"
 )
 
+# ================== SESSION STATE INIT ==================
+if "admin_logged_in" not in st.session_state:
+    st.session_state["admin_logged_in"] = False
+
+if "story_id" not in st.session_state:
+    st.session_state["story_id"] = None
+
 # ================== DATABASE ==================
+os.makedirs("images", exist_ok=True)
 conn = sqlite3.connect("data.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -38,11 +46,11 @@ CREATE TABLE IF NOT EXISTS admin (
 )
 """)
 
-# create default admin
+# create default admin if not exists
 cursor.execute("SELECT * FROM admin")
 if not cursor.fetchone():
-    password = hashlib.sha256("admin123".encode()).hexdigest()
-    cursor.execute("INSERT INTO admin VALUES (?,?)", ("admin", password))
+    default_pw = hashlib.sha256("admin123".encode()).hexdigest()
+    cursor.execute("INSERT INTO admin VALUES (?,?)", ("admin", default_pw))
     conn.commit()
 
 # ================== FUNCTIONS ==================
@@ -50,31 +58,20 @@ def hash_password(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
 
 def admin_login(user, pw):
-    cursor.execute("SELECT * FROM admin WHERE username=? AND password=?", (user, hash_password(pw)))
-    return cursor.fetchone()
+    result = cursor.execute(
+        "SELECT * FROM admin WHERE username=? AND password=?",
+        (user, hash_password(pw))
+    ).fetchone()
+    return result is not None
 
 def luxury_css():
     st.markdown("""
     <style>
-    body {
-        background-color:#0e0e0e;
-        color:#ffffff;
-        font-family:'Georgia', serif;
-    }
-    .card {
-        background:#151515;
-        padding:25px;
-        border-radius:16px;
-        box-shadow:0 0 40px rgba(255,215,0,0.12);
-        margin-bottom:30px;
-    }
-    h1,h2,h3 {
-        color:#d4af37;
-    }
-    .metric {
-        color:#999;
-        font-size:14px;
-    }
+    body {background-color:#0e0e0e; color:#ffffff; font-family:'Georgia', serif;}
+    .card {background:#151515; padding:25px; border-radius:16px;
+           box-shadow:0 0 40px rgba(255,215,0,0.12); margin-bottom:30px;}
+    h1,h2,h3 {color:#d4af37;}
+    .metric {color:#999; font-size:14px;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -92,7 +89,7 @@ menu = st.sidebar.radio(
 )
 
 # ================== HOME ==================
-if menu == "Home":
+if menu == "Home" and st.session_state["story_id"] is None:
     cursor.execute("SELECT * FROM stories WHERE approved=1 ORDER BY created_at DESC")
     stories = cursor.fetchall()
 
@@ -118,35 +115,36 @@ if menu == "Home":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== STORY PAGE ==================
-if "story_id" in st.session_state:
+if st.session_state["story_id"]:
     sid = st.session_state["story_id"]
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
     story = cursor.fetchone()
 
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.header(story[2])
-    st.subheader(story[1])
+    if story:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.header(story[2])
+        st.subheader(story[1])
 
-    if story[5] and os.path.exists(story[5]):
-        st.image(story[5], width=500)
+        if story[5] and os.path.exists(story[5]):
+            st.image(story[5], width=500)
 
-    st.write(story[4])
-    st.caption(f"❤️ {story[7]}  | 👁 {story[8]}")
+        st.write(story[4])
+        st.caption(f"❤️ {story[7]}  | 👁 {story[8]}")
 
-    if st.button("❤️ Like Story"):
-        cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
-        conn.commit()
-        st.experimental_rerun()
+        if st.button("❤️ Like Story"):
+            cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
+            conn.commit()
+            st.experimental_rerun()
 
-    if st.button("⬅ Back"):
-        del st.session_state["story_id"]
-        st.experimental_rerun()
+        if st.button("⬅ Back"):
+            st.session_state["story_id"] = None
+            st.experimental_rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== FEATURED ==================
 if menu == "Featured Stories":
-    cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1")
+    cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1 ORDER BY created_at DESC")
     feats = cursor.fetchall()
 
     for s in feats:
@@ -160,11 +158,11 @@ if menu == "Featured Stories":
 if menu == "Submit Story":
     st.subheader("Submit Your Entrepreneur Story")
 
-    with st.form("submit"):
+    with st.form("submit_story_form"):
         name = st.text_input("Entrepreneur Name")
         title = st.text_input("Story Title")
         profile = st.text_area("Short Profile")
-        story = st.text_area("Full Story")
+        story_text = st.text_area("Full Story")
         image = st.file_uploader("Upload Cover Image", ["jpg","png"])
         submit = st.form_submit_button("Submit")
 
@@ -172,13 +170,13 @@ if menu == "Submit Story":
             img_path = None
             if image:
                 img_path = f"images/{datetime.now().timestamp()}_{image.name}"
-                with open(img_path,"wb") as f:
+                with open(img_path, "wb") as f:
                     f.write(image.read())
 
             cursor.execute("""
             INSERT INTO stories (name,title,profile,story,image,created_at)
             VALUES (?,?,?,?,?,?)
-            """,(name,title,profile,story,img_path,datetime.now().isoformat()))
+            """, (name, title, profile, story_text, img_path, datetime.now().isoformat()))
             conn.commit()
             st.success("Story submitted for admin approval.")
 
@@ -186,32 +184,35 @@ if menu == "Submit Story":
 if menu == "Admin Login":
     st.subheader("Admin Panel")
 
-    if "admin" not in st.session_state:
+    if not st.session_state["admin_logged_in"]:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            if admin_login(user,pw):
-                st.session_state["admin"] = True
+            if admin_login(user, pw):
+                st.session_state["admin_logged_in"] = True
+                st.success("Login successful!")
                 st.experimental_rerun()
             else:
                 st.error("Invalid credentials")
-
     else:
-        cursor.execute("SELECT * FROM stories WHERE approved=0")
+        st.info("You are logged in as Admin ✅")
+
+        cursor.execute("SELECT * FROM stories WHERE approved=0 ORDER BY created_at DESC")
         pending = cursor.fetchall()
 
         for s in pending:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.subheader(s[2])
-            st.write(s[1])
+            st.write(f"**{s[1]}**")
 
-            if st.button("Approve", key=f"a{s[0]}"):
+            col1, col2 = st.columns(2)
+            if col1.button("Approve", key=f"a{s[0]}"):
                 cursor.execute("UPDATE stories SET approved=1 WHERE id=?", (s[0],))
                 conn.commit()
                 st.experimental_rerun()
 
-            if st.button("Feature", key=f"f{s[0]}"):
+            if col2.button("Feature", key=f"f{s[0]}"):
                 cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (s[0],))
                 conn.commit()
                 st.experimental_rerun()
