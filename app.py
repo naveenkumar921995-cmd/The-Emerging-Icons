@@ -24,7 +24,7 @@ os.makedirs("images", exist_ok=True)
 conn = sqlite3.connect("data.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# Create tables if they don't exist
+# Create main tables if they don't exist
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS stories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,8 +37,7 @@ CREATE TABLE IF NOT EXISTS stories (
     likes INTEGER DEFAULT 0,
     views INTEGER DEFAULT 0,
     approved INTEGER DEFAULT 0,
-    created_at TEXT,
-    expiry_date TEXT
+    created_at TEXT
 )
 """)
 
@@ -48,6 +47,14 @@ CREATE TABLE IF NOT EXISTS admin (
     password TEXT
 )
 """)
+
+# Add expiry_date column safely if it doesn't exist
+try:
+    cursor.execute("ALTER TABLE stories ADD COLUMN expiry_date TEXT")
+    conn.commit()
+except sqlite3.OperationalError:
+    # Column already exists
+    pass
 
 # create default admin if not exists
 cursor.execute("SELECT * FROM admin")
@@ -84,13 +91,8 @@ def luxury_css():
         transition: transform 0.2s;
     }
     .card:hover {transform: scale(1.02);}
-    h1,h2,h3 {
-        color:#ffd700;
-    }
-    .metric {
-        color:#ccc;
-        font-size:14px;
-    }
+    h1,h2,h3 {color:#ffd700;}
+    .metric {color:#ccc; font-size:14px;}
     .logout-btn {text-align:right; margin-bottom:20px;}
     </style>
     """, unsafe_allow_html=True)
@@ -272,13 +274,19 @@ if menu == "Admin Login":
 
         # Apply DB updates
         if approve_id:
-            cursor.execute("UPDATE stories SET approved=1, expiry_date=? WHERE id=?", (expiry_for_story.isoformat() if expiry_for_story else None, approve_id))
+            cursor.execute(
+                "UPDATE stories SET approved=1, expiry_date=? WHERE id=?",
+                (expiry_for_story.isoformat() if expiry_for_story else None, approve_id)
+            )
             conn.commit()
             st.success("Story approved ✅")
             st.experimental_rerun()
 
         if feature_id:
-            cursor.execute("UPDATE stories SET featured=1, expiry_date=? WHERE id=?", (expiry_for_story.isoformat() if expiry_for_story else None, feature_id))
+            cursor.execute(
+                "UPDATE stories SET featured=1, expiry_date=? WHERE id=?",
+                (expiry_for_story.isoformat() if expiry_for_story else None, feature_id)
+            )
             conn.commit()
             st.success("Story featured ⭐")
             st.experimental_rerun()
