@@ -70,31 +70,91 @@ def admin_login(user, pw):
         (user, hash_password(pw))
     ).fetchone() is not None
 
-# ================== PREMIUM CSS ==================
+# ================== PREMIUM DARK LUXE CSS ==================
 st.markdown("""
 <style>
+/* Overall page */
 body {
-    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    background: linear-gradient(135deg,#0e0e0e,#1a1a1a,#2c2c2c);
     font-family:'Poppins', sans-serif;
     color:#fff;
 }
-h1,h2,h3 { color:#ffd700; }
-.card {
-    background:#1c1c1c;
-    padding:25px;
-    border-radius:16px;
-    box-shadow:0 0 50px rgba(255,215,0,0.15);
-    margin-bottom:30px;
-    transition: transform 0.2s;
+
+/* Hero section */
+.hero {
+  width: 100%;
+  height: 420px;
+  background-image: url('https://source.unsplash.com/1600x900/?business,entrepreneur');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.card:hover {transform: scale(1.02);}
-.logout-btn {text-align:right; margin-bottom:20px;}
+.hero-text {
+  text-align: center;
+  color: #ffd700;
+  text-shadow: 1px 2px 15px rgba(0,0,0,0.7);
+}
+.hero-text h1 {
+  font-size: 3.5rem;
+  font-weight: bold;
+}
+.hero-text p {
+  font-size: 1.6rem;
+}
+
+/* Card style */
+.premium-card {
+    background: rgba(30,30,30,0.9);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(255,215,0,0.2);
+    margin-bottom: 30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.premium-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 12px 40px rgba(255,215,0,0.4);
+}
+.premium-card h3 { color: #ffd700; }
+.premium-card p { color: #ddd; }
+
+/* Buttons */
+.stButton>button {
+    background-color: #ffd700;
+    color: #0e0e0e;
+    font-weight:bold;
+    border-radius: 8px;
+    padding: 8px 15px;
+}
+.stButton>button:hover {
+    background-color: #ffcc00;
+}
+
+/* Logout */
+.logout-btn { text-align:right; margin-bottom:20px; }
+
+/* Footer */
+.footer {
+    padding:20px;
+    text-align:center;
+    color:#bbb;
+    font-size:14px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ================== HEADER ==================
-st.markdown("<h1 style='text-align:center'>THE EMERGING ICONS</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:#ddd'>India’s Next Generation of Entrepreneurs</p>", unsafe_allow_html=True)
+# ================== HERO SECTION ==================
+st.markdown("""
+<div class="hero">
+  <div class="hero-text">
+    <h1>Discover India’s Next Icons</h1>
+    <p>Stories of Vision, Grit & Legacy</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
 st.divider()
 
 # ================== SIDEBAR ==================
@@ -115,22 +175,19 @@ if menu == "Home" and st.session_state["story_id"] is None:
     stories = cursor.fetchall()
     story_to_open = None
 
-    for i in range(0, len(stories), 3):
-        cols = st.columns(3)
-        for idx, s in enumerate(stories[i:i+3]):
-            with cols[idx]:
-                st.markdown("<div class='card'>", unsafe_allow_html=True)
-                if s[5] and os.path.exists(s[5]):
-                    st.image(s[5], use_column_width='always')
-                st.subheader(s[2])
-                st.write(f"**{s[1]}**")
-                st.write(s[4][:150]+"...")
-                st.caption(f"❤️ {s[7]} | 👁 {s[8]}")
-                if st.button("Read Full Story", key=f"read{s[0]}"):
-                    story_to_open = s[0]
-                st.markdown("</div>", unsafe_allow_html=True)
-            cursor.execute("UPDATE stories SET views = views + 1 WHERE id=?", (s[0],))
-            conn.commit()
+    for s in stories:
+        st.markdown(f"<div class='premium-card'>", unsafe_allow_html=True)
+        if s[5] and os.path.exists(s[5]):
+            st.image(s[5], use_column_width=True)
+        st.subheader(s[2])
+        st.write(f"**{s[1]}**")
+        st.write(s[4][:200]+"...")
+        st.caption(f"❤️ {s[7]} | 👁 {s[8]}")
+        if st.button("Read Full Story", key=f"read{s[0]}"):
+            story_to_open = s[0]
+        st.markdown("</div>", unsafe_allow_html=True)
+        cursor.execute("UPDATE stories SET views = views + 1 WHERE id=?", (s[0],))
+        conn.commit()
     if story_to_open:
         st.session_state["story_id"] = story_to_open
         st.experimental_rerun()
@@ -141,7 +198,7 @@ if st.session_state["story_id"]:
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
     story = cursor.fetchone()
     if story:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("<div class='premium-card'>", unsafe_allow_html=True)
         st.header(story[2])
         st.subheader(story[1])
         if story[5] and os.path.exists(story[5]):
@@ -171,7 +228,7 @@ if menu == "Featured Stories":
         cols = st.columns(len(feats))
         for idx, s in enumerate(feats):
             with cols[idx]:
-                st.markdown("<div class='card'>", unsafe_allow_html=True)
+                st.markdown("<div class='premium-card'>", unsafe_allow_html=True)
                 if s[5] and os.path.exists(s[5]):
                     st.image(s[5], use_column_width=True)
                 st.subheader(s[2])
@@ -232,7 +289,7 @@ if menu == "Admin Login":
         pending = cursor.fetchall()
         for s in pending:
             with st.form(f"story_form_{s[0]}"):
-                st.markdown("<div class='card'>", unsafe_allow_html=True)
+                st.markdown("<div class='premium-card'>", unsafe_allow_html=True)
                 st.subheader(s[2])
                 st.write(f"**{s[1]}**")
                 expiry_for_story = st.date_input("Set expiry date (optional)", min_value=date.today(), key=f"expiry{s[0]}")
@@ -252,3 +309,10 @@ if menu == "Admin Login":
                     conn.commit()
                     st.success("Story featured ⭐")
                     st.experimental_rerun()
+
+# ================== FOOTER ==================
+st.markdown("""
+<div class="footer">
+    © 2026 The Emerging Icons - Ultra Luxury Edition | Powered by Streamlit
+</div>
+""", unsafe_allow_html=True)
