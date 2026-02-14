@@ -56,17 +56,42 @@ def admin_login(user, pw):
     cursor.execute("SELECT * FROM admin WHERE username=? AND password=?", (user, hash_password(pw)))
     return cursor.fetchone()
 
-# ================= LUXURY CSS =================
+# ================= ULTRA LUXURY CSS =================
 luxury_style = """
 <style>
-body { background:#0f0f0f; color:#fff; font-family:'Merriweather', serif; }
-h1,h2,h3 { color:#d4af37; }
-.card { background:#151515; padding:25px; border-radius:16px; box-shadow:0 0 50px rgba(255,215,0,0.15); margin-bottom:30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.card:hover { transform: translateY(-5px); box-shadow:0 0 80px rgba(255,215,0,0.4);}
-.logout-btn {background-color:#d4af37; color:#0f0f0f; font-weight:bold; border-radius:8px; padding:5px 12px; float:right; margin-top:-40px; }
-.featured-carousel { display:flex; overflow-x:auto; gap:20px; padding:20px 0; }
-.featured-card { min-width:300px; flex:0 0 auto; background:#1a1a1a; border-radius:16px; padding:15px; box-shadow:0 0 30px rgba(255,215,0,0.2); transition: transform 0.3s ease; }
-.featured-card:hover { transform: translateY(-5px); box-shadow:0 0 50px rgba(255,215,0,0.5);}
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap');
+
+body {
+    background: linear-gradient(160deg, #0b0b0b, #1c1c1c);
+    color:#fff; font-family:'Merriweather', serif;
+}
+
+h1,h2,h3 { color:#ffd700; text-shadow: 0px 0px 10px rgba(255,215,0,0.7); }
+
+.card {
+    background:#1a1a1a; 
+    padding:25px; 
+    border-radius:20px; 
+    box-shadow:0 0 60px rgba(255,215,0,0.15); 
+    margin-bottom:30px; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover { transform: translateY(-10px); box-shadow:0 0 100px rgba(255,215,0,0.4); }
+
+.logout-btn {
+    background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px;
+    float:right; margin-top:-50px; cursor:pointer;
+}
+
+.featured-carousel {
+    display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior: smooth;
+}
+.featured-card {
+    min-width:320px; flex:0 0 auto; background:#222; border-radius:16px; padding:20px; 
+    box-shadow:0 0 40px rgba(255,215,0,0.2); transition: transform 0.3s ease;
+}
+.featured-card:hover { transform: translateY(-8px); box-shadow:0 0 70px rgba(255,215,0,0.5);}
+.counter { font-size:1.2rem; font-weight:bold; color:#ffd700; }
 </style>
 """
 
@@ -91,17 +116,17 @@ if menu == "Home":
     cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1 AND (expiry_date IS NULL OR expiry_date>=?) ORDER BY created_at DESC", (today_str,))
     featured = cursor.fetchall()
     if featured:
-        st.markdown("<h2 style='color:#d4af37;'>⭐ Featured Entrepreneurs</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#ffd700;'>⭐ Featured Entrepreneurs</h2>", unsafe_allow_html=True)
         st.markdown("<div class='featured-carousel'>", unsafe_allow_html=True)
         for f in featured:
-            img_html = f"<img src='{f[5]}' width='100%' style='border-radius:12px; margin-bottom:8px;'/>" if f[5] else ""
+            img_html = f"<img src='{f[5]}' width='100%' style='border-radius:12px; margin-bottom:10px;'/>" if f[5] else ""
             card_html = f"""
             <div class='featured-card'>
                 {img_html}
                 <h3>{f[2]}</h3>
                 <p><b>{f[1]}</b></p>
                 <p>{f[4][:120]}...</p>
-                <p style='font-size:12px;color:#aaa;'>❤️ {f[7]}  | 👁 {f[8]}</p>
+                <p class='counter'>❤️ {f[7]}  | 👁 {f[8]}</p>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
@@ -120,13 +145,13 @@ if menu == "Home":
         col2.subheader(s[2])
         col2.write(f"**{s[1]}**")
         col2.write(s[4][:280]+"...")
-        col2.caption(f"❤️ {s[7]}  | 👁 {s[8]}")
+        col2.markdown(f"<p class='counter'>❤️ {s[7]}  | 👁 {s[8]}</p>", unsafe_allow_html=True)
         if col2.button("Read Full Story", key=f"read{s[0]}"):
             st.session_state["story_id"] = s[0]
             st.experimental_rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= FULL STORY =================
+# ================= FULL STORY MODAL =================
 if "story_id" in st.session_state:
     sid = st.session_state["story_id"]
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
@@ -137,7 +162,7 @@ if "story_id" in st.session_state:
     if story[5] and os.path.exists(story[5]):
         st.image(story[5], width=500)
     st.write(story[4])
-    st.caption(f"❤️ {story[7]}  | 👁 {story[8]}")
+    st.markdown(f"<p class='counter'>❤️ {story[7]}  | 👁 {story[8]}</p>", unsafe_allow_html=True)
     if st.button("❤️ Like Story"):
         cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
         conn.commit()
@@ -183,7 +208,6 @@ if menu == "Admin Login":
             else:
                 st.error("Invalid credentials")
     else:
-        # Logout button (premium top-right style)
         if st.button("Logout", key="logout"):
             del st.session_state["admin"]
             st.experimental_rerun()
