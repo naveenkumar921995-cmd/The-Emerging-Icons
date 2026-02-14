@@ -4,23 +4,15 @@ import hashlib
 import os
 from datetime import datetime, date
 
-# ================== PAGE CONFIG ==================
-st.set_page_config(page_title="The Emerging Icons", page_icon="⭐", layout="wide")
-
-# ================== SESSION STATE ==================
-if "admin_logged_in" not in st.session_state:
-    st.session_state["admin_logged_in"] = False
-if "admin_user" not in st.session_state:
-    st.session_state["admin_user"] = None
-if "story_id" not in st.session_state:
-    st.session_state["story_id"] = None
-
-# ================== DATABASE ==================
+# ================== FOLDERS ==================
+os.makedirs("data", exist_ok=True)
 os.makedirs("images", exist_ok=True)
-conn = sqlite3.connect("data.db", check_same_thread=False)
+
+DB_PATH = "data/data.db"
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cursor = conn.cursor()
 
-# Create tables if not exists
+# ================== TABLE CREATION ==================
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS stories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,9 +46,19 @@ except sqlite3.OperationalError:
 # Default admin
 cursor.execute("SELECT * FROM admin")
 if not cursor.fetchone():
-    default_pw = hashlib.sha256("admin123".encode()).hexdigest()
-    cursor.execute("INSERT INTO admin VALUES (?,?)", ("admin", default_pw))
+    cursor.execute(
+        "INSERT INTO admin VALUES (?,?)",
+        ("admin", hashlib.sha256("admin123".encode()).hexdigest())
+    )
     conn.commit()
+
+# ================== SESSION STATE ==================
+if "admin_logged_in" not in st.session_state:
+    st.session_state["admin_logged_in"] = False
+if "admin_user" not in st.session_state:
+    st.session_state["admin_user"] = None
+if "story_id" not in st.session_state:
+    st.session_state["story_id"] = None
 
 # ================== FUNCTIONS ==================
 def hash_password(pw):
@@ -113,7 +115,6 @@ if menu == "Home" and st.session_state["story_id"] is None:
     stories = cursor.fetchall()
     story_to_open = None
 
-    # Responsive grid: 3 columns
     for i in range(0, len(stories), 3):
         cols = st.columns(3)
         for idx, s in enumerate(stories[i:i+3]):
@@ -167,7 +168,6 @@ if menu == "Featured Stories":
     feats = cursor.fetchall()
     if feats:
         st.markdown("### Featured Stories")
-        # Horizontal scroll effect using columns
         cols = st.columns(len(feats))
         for idx, s in enumerate(feats):
             with cols[idx]:
@@ -218,7 +218,6 @@ if menu == "Admin Login":
             else:
                 st.error("Invalid credentials")
     else:
-        # Logout button top
         st.markdown("<div class='logout-btn'>", unsafe_allow_html=True)
         if st.button("Logout"):
             st.session_state["admin_logged_in"] = False
