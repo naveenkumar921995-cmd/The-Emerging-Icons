@@ -16,6 +16,7 @@ os.makedirs("images", exist_ok=True)
 conn = sqlite3.connect("data.db", check_same_thread=False)
 cursor = conn.cursor()
 
+# Create tables
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS stories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,8 +29,7 @@ CREATE TABLE IF NOT EXISTS stories (
     likes INTEGER DEFAULT 0,
     views INTEGER DEFAULT 0,
     approved INTEGER DEFAULT 0,
-    created_at TEXT,
-    expiry_date TEXT
+    created_at TEXT
 )
 """)
 
@@ -40,7 +40,14 @@ CREATE TABLE IF NOT EXISTS admin (
 )
 """)
 
-# default admin
+# Add expiry_date column if missing
+try:
+    cursor.execute("ALTER TABLE stories ADD COLUMN expiry_date TEXT")
+    conn.commit()
+except sqlite3.OperationalError:
+    pass  # column already exists
+
+# Default admin
 cursor.execute("SELECT * FROM admin")
 if not cursor.fetchone():
     password = hashlib.sha256("admin123".encode()).hexdigest()
@@ -79,7 +86,7 @@ menu = st.sidebar.radio(
     ["Home", "Featured Stories", "Submit Story", "Admin Login"]
 )
 
-today_str = datetime.now().date().isoformat()
+today_str = date.today().isoformat()
 
 # ================== HOME ==================
 if menu == "Home":
@@ -194,15 +201,17 @@ if menu == "Admin Login":
             st.subheader(s[2])
             st.write(s[1])
 
-            # Approve with expiry
+            # Expiry date input
             expiry = st.date_input("Set expiry date", value=date.today(), key=f"expiry_{s[0]}")
+
+            # Approve button
             if st.button("Approve", key=f"approve_{s[0]}"):
                 cursor.execute("UPDATE stories SET approved=1, expiry_date=? WHERE id=?", (expiry.isoformat(), s[0]))
                 conn.commit()
                 st.success(f"Story '{s[2]}' approved ✅")
                 st.experimental_rerun()
 
-            # Feature
+            # Feature button
             if st.button("Feature", key=f"feature_{s[0]}"):
                 cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (s[0],))
                 conn.commit()
