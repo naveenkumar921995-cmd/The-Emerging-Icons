@@ -33,7 +33,6 @@ CREATE TABLE IF NOT EXISTS stories (
     expiry_date TEXT
 )
 """)
-
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS admin (
     username TEXT,
@@ -57,21 +56,46 @@ def admin_login(user, pw):
     return cursor.fetchone()
 
 # ================= ULTRA LUXURY CSS =================
-luxury_style = """
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap');
-body {background: linear-gradient(160deg, #0b0b0b, #1c1c1c); color:#fff; font-family:'Merriweather', serif;}
-h1,h2,h3 { color:#ffd700; text-shadow: 0px 0px 10px rgba(255,215,0,0.7); }
-.card {background:#1a1a1a; padding:25px; border-radius:20px; box-shadow:0 0 60px rgba(255,215,0,0.15); margin-bottom:30px; transition: transform 0.3s ease, box-shadow 0.3s ease;}
-.card:hover { transform: translateY(-10px); box-shadow:0 0 100px rgba(255,215,0,0.4); }
-.logout-btn {background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px; float:right; margin-top:-50px; cursor:pointer;}
-.featured-carousel {display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior: smooth;}
-.featured-card {min-width:320px; flex:0 0 auto; background:#222; border-radius:16px; padding:20px; box-shadow:0 0 40px rgba(255,215,0,0.2); transition: transform 0.3s ease;}
-.featured-card:hover { transform: translateY(-8px); box-shadow:0 0 70px rgba(255,215,0,0.5);}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+body {
+    background: linear-gradient(160deg, #0b0b0b, #1c1c1c);
+    color:#fff; font-family:'Playfair Display', serif;
+}
+h1,h2,h3 { color:#ffd700; text-shadow: 0px 0px 15px rgba(255,215,0,0.8); }
+
+.card {
+    background: rgba(30,30,30,0.8);
+    backdrop-filter: blur(10px);
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0 0 80px rgba(255,215,0,0.15);
+    margin-bottom:30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover { transform: translateY(-10px); box-shadow:0 0 120px rgba(255,215,0,0.5); }
+
+.featured-carousel { display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior:smooth; }
+.featured-card {
+    min-width:320px; flex:0 0 auto;
+    background: rgba(40,40,40,0.9);
+    border-radius:16px; padding:20px; 
+    box-shadow:0 0 60px rgba(255,215,0,0.2);
+    transition: transform 0.3s ease;
+}
+.featured-card:hover { transform: translateY(-8px); box-shadow:0 0 90px rgba(255,215,0,0.5); }
+
+.logout-btn {
+    background-color:#ffd700; color:#0b0b0b;
+    font-weight:bold; border-radius:12px; padding:5px 15px;
+    float:right; cursor:pointer;
+}
 .counter { font-size:1.2rem; font-weight:bold; color:#ffd700; }
+.expiry { font-size:0.9rem; color:#ffa500; font-style:italic; }
 </style>
-"""
-st.markdown(luxury_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ================= HEADER =================
 st.markdown("<h1 style='text-align:center; font-size:3rem;'>THE EMERGING ICONS</h1>", unsafe_allow_html=True)
@@ -79,11 +103,7 @@ st.markdown("<p style='text-align:center; font-size:1.2rem; color:#aaa;'>India�
 st.divider()
 
 # ================= SIDEBAR =================
-menu = st.sidebar.radio(
-    "Navigation",
-    ["Home", "Featured Stories", "Submit Story", "Admin Login"]
-)
-
+menu = st.sidebar.radio("Navigation", ["Home", "Featured Stories", "Submit Story", "Admin Login"])
 today_str = date.today().isoformat()
 
 # ================= HOME =================
@@ -102,7 +122,8 @@ if menu == "Home":
                 <h3>{f[2]}</h3>
                 <p><b>{f[1]}</b></p>
                 <p>{f[4][:120]}...</p>
-                <p class='counter'>❤️ {f[7]}  | 👁 {f[8]}</p>
+                <p class='counter'>❤️ {f[7]} | 👁 {f[8]}</p>
+                {'<p class="expiry">Expires in '+str((date.fromisoformat(f[11])-date.today()).days)+' days</p>' if f[11] else ''}
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
@@ -121,32 +142,44 @@ if menu == "Home":
         col2.subheader(s[2])
         col2.write(f"**{s[1]}**")
         col2.write(s[4][:280]+"...")
-        col2.markdown(f"<p class='counter'>❤️ {s[7]}  | 👁 {s[8]}</p>", unsafe_allow_html=True)
+        if s[11]:
+            col2.markdown(f"<p class='expiry'>Expires in {(date.fromisoformat(s[11])-date.today()).days} days</p>", unsafe_allow_html=True)
+        col2.markdown(f"<p class='counter'>❤️ {s[7]} | 👁 {s[8]}</p>", unsafe_allow_html=True)
         if col2.button("Read Full Story", key=f"read{s[0]}"):
             st.session_state["story_id"] = s[0]
             st.experimental_rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FULL STORY =================
+# ================= FULL STORY MODAL =================
 if "story_id" in st.session_state:
     sid = st.session_state["story_id"]
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
     story = cursor.fetchone()
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.header(story[2])
-    st.subheader(story[1])
-    if story[5] and os.path.exists(story[5]):
-        st.image(story[5], width=500)
-    st.write(story[4])
-    st.markdown(f"<p class='counter'>❤️ {story[7]}  | 👁 {story[8]}</p>", unsafe_allow_html=True)
-    if st.button("❤️ Like Story"):
-        cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
-        conn.commit()
-        st.experimental_rerun()
-    if st.button("⬅ Back"):
-        del st.session_state["story_id"]
-        st.experimental_rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Use Streamlit modal for popup effect
+    with st.modal(f"Story: {story[2]}", key=f"modal_{sid}"):
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.header(story[2])
+        st.subheader(story[1])
+        if story[5] and os.path.exists(story[5]):
+            st.image(story[5], width=500)
+        st.write(story[4])
+        st.markdown(f"<p class='counter'>❤️ {story[7]} | 👁 {story[8]}</p>", unsafe_allow_html=True)
+
+        # Like button inside modal
+        if st.button("❤️ Like Story", key=f"like_{sid}"):
+            cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
+            conn.commit()
+            st.experimental_rerun()
+
+        # Close modal
+        if st.button("⬅ Back to Home", key=f"back_{sid}"):
+            del st.session_state["story_id"]
+            st.experimental_rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
 # ================= SUBMIT STORY =================
 if menu == "Submit Story":
@@ -184,13 +217,11 @@ if menu == "Admin Login":
             else:
                 st.error("Invalid credentials")
     else:
-        # Floating Logout button
-        st.markdown("<button class='logout-btn'>Logout</button>", unsafe_allow_html=True)
-        if st.button("Logout", key="logout_btn"):
+        st.button("Logout", key="logout", help="Click to logout")
+        if st.button("Logout", key="logout-btn"):
             del st.session_state["admin"]
             st.experimental_rerun()
-
-        # Pending stories with expiry date
+        # Pending stories
         cursor.execute("SELECT * FROM stories WHERE approved=0")
         pending = cursor.fetchall()
         for s in pending:
