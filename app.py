@@ -92,9 +92,38 @@ menu = st.sidebar.radio(
 
 today_str = date.today().isoformat()
 
+# ================== HOME ==========
 # ================== HOME ==================
 if menu == "Home":
-    cursor.execute("SELECT * FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?) ORDER BY created_at DESC", (today_str,))
+    # ---- Featured Stories Scroll ----
+    cursor.execute("""
+        SELECT * FROM stories 
+        WHERE approved=1 AND featured=1 AND (expiry_date IS NULL OR expiry_date>=?)
+        ORDER BY created_at DESC
+    """, (today_str,))
+    featured_stories = cursor.fetchall()
+
+    if featured_stories:
+        st.markdown("<h2 style='color:#d4af37'>⭐ Featured Entrepreneurs</h2>", unsafe_allow_html=True)
+        st.markdown("<div style='display:flex; overflow-x:auto; gap:20px; padding-bottom:20px;'>", unsafe_allow_html=True)
+        for s in featured_stories:
+            card_html = f"""
+            <div class='card' style='min-width:300px; flex:0 0 auto;'>
+                <h3>{s[2]}</h3>
+                <p><b>{s[1]}</b></p>
+                <p>{s[4][:120]}...</p>
+                <p style='font-size:12px;color:#aaa;'>❤️ {s[7]}  | 👁 {s[8]}</p>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ---- Main Stories ----
+    cursor.execute("""
+        SELECT * FROM stories 
+        WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?) AND featured=0
+        ORDER BY created_at DESC
+    """, (today_str,))
     stories = cursor.fetchall()
 
     for s in stories:
@@ -115,6 +144,7 @@ if menu == "Home":
         if col2.button("Read Full Story", key=f"read{s[0]}"):
             st.session_state["story_id"] = s[0]
             st.experimental_rerun()
+
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== FULL STORY ==================
@@ -229,3 +259,4 @@ if menu == "Admin Login":
 if st.session_state.get("rerun", False):
     st.session_state["rerun"] = False
     st.experimental_rerun()
+
