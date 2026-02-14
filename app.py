@@ -93,6 +93,8 @@ if menu == "Home" and st.session_state["story_id"] is None:
     cursor.execute("SELECT * FROM stories WHERE approved=1 ORDER BY created_at DESC")
     stories = cursor.fetchall()
 
+    story_to_open = None
+
     for s in stories:
         cursor.execute("UPDATE stories SET views = views + 1 WHERE id=?", (s[0],))
         conn.commit()
@@ -109,10 +111,13 @@ if menu == "Home" and st.session_state["story_id"] is None:
         col2.caption(f"❤️ {s[7]}  | 👁 {s[8]}")
 
         if col2.button("Read Full Story", key=f"read{s[0]}"):
-            st.session_state["story_id"] = s[0]
-            st.experimental_rerun()
+            story_to_open = s[0]
 
         st.markdown("</div>", unsafe_allow_html=True)
+
+    if story_to_open:
+        st.session_state["story_id"] = story_to_open
+        st.experimental_rerun()
 
 # ================== STORY PAGE ==================
 if st.session_state["story_id"]:
@@ -201,6 +206,9 @@ if menu == "Admin Login":
         cursor.execute("SELECT * FROM stories WHERE approved=0 ORDER BY created_at DESC")
         pending = cursor.fetchall()
 
+        approve_id = None
+        feature_id = None
+
         for s in pending:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.subheader(s[2])
@@ -208,13 +216,19 @@ if menu == "Admin Login":
 
             col1, col2 = st.columns(2)
             if col1.button("Approve", key=f"a{s[0]}"):
-                cursor.execute("UPDATE stories SET approved=1 WHERE id=?", (s[0],))
-                conn.commit()
-                st.experimental_rerun()
+                approve_id = s[0]
 
             if col2.button("Feature", key=f"f{s[0]}"):
-                cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (s[0],))
-                conn.commit()
-                st.experimental_rerun()
+                feature_id = s[0]
 
             st.markdown("</div>", unsafe_allow_html=True)
+
+        if approve_id:
+            cursor.execute("UPDATE stories SET approved=1 WHERE id=?", (approve_id,))
+            conn.commit()
+            st.experimental_rerun()
+
+        if feature_id:
+            cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (feature_id,))
+            conn.commit()
+            st.experimental_rerun()
