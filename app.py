@@ -57,38 +57,37 @@ def admin_login(user, pw):
     return cursor.fetchone()
 
 # ================= ULTRA PREMIUM CSS =================
-# ================= ULTRA PREMIUM CSS =================
 luxury_style = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap');
 
 body {
-    background: linear-gradient(160deg, #0d0d0d, #1f1f1f); /* Dark premium background */
-    color:#e0e0e0; 
+    background: #f5f5f5; /* Light soft premium background */
+    color:#333; 
     font-family:'Merriweather', serif;
 }
 
 h1,h2,h3 { 
-    color:#ffd700; /* Gold headings */
-    text-shadow: 0px 0px 15px rgba(255,215,0,0.9); 
+    color:#bfa33f; /* Subtle gold */
+    text-shadow: 0px 0px 6px rgba(191,163,63,0.8); 
 }
 
 .card {
-    background:linear-gradient(135deg, #1b1b1b, #2a2a2a); /* Gradient cards for depth */
+    background:#ffffff; 
     padding:25px; 
-    border-radius:20px; 
-    box-shadow:0 0 60px rgba(255,215,0,0.2); 
+    border-radius:16px; 
+    box-shadow:0 10px 30px rgba(191,163,63,0.2); 
     margin-bottom:30px; 
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card:hover { 
-    transform: translateY(-10px); 
-    box-shadow:0 0 100px rgba(255,215,0,0.5); 
+    transform: translateY(-8px); 
+    box-shadow:0 15px 50px rgba(191,163,63,0.3); 
 }
 
 .logout-btn {
-    background-color:#ffd700; 
-    color:#0b0b0b; 
+    background-color:#bfa33f; 
+    color:#fff; 
     font-weight:bold; 
     border-radius:12px; 
     padding:5px 15px;
@@ -108,29 +107,25 @@ h1,h2,h3 {
 .featured-card {
     min-width:320px; 
     flex:0 0 auto; 
-    background:linear-gradient(135deg, #222, #333); 
+    background:#fafafa; 
     border-radius:16px; 
     padding:20px; 
-    box-shadow:0 0 40px rgba(255,215,0,0.3); 
+    box-shadow:0 5px 25px rgba(191,163,63,0.2); 
     transition: transform 0.3s ease;
 }
 .featured-card:hover { 
-    transform: translateY(-8px); 
-    box-shadow:0 0 80px rgba(255,215,0,0.6);
+    transform: translateY(-5px); 
+    box-shadow:0 10px 40px rgba(191,163,63,0.3);
 }
 
 .counter { 
     font-size:1.2rem; 
     font-weight:bold; 
-    color:#ffd700; 
-}
-
-.text-light { 
-    color:#f0f0f0 !important; 
+    color:#bfa33f; 
 }
 
 p, span, label, td {
-    color:#e0e0e0; /* Ensure all text is readable on dark background */
+    color:#333; /* Ensure all text is readable */
 }
 </style>
 """
@@ -269,4 +264,5 @@ if menu == "Admin Login":
                 conn.commit()
                 st.success(f"Story '{s[2]}' featured ⭐")
             st.markdown("</div>", unsafe_allow_html=True)
+
 
