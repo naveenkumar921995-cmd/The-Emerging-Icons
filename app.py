@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS stories (
     expiry_date TEXT
 )
 """)
+
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS admin (
     username TEXT,
@@ -47,7 +48,7 @@ if not cursor.fetchone():
     cursor.execute("INSERT INTO admin VALUES (?,?)", ("admin", password))
     conn.commit()
 
-# ================= FUNCTIONS =================
+# ================== FUNCTIONS ==================
 def hash_password(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
 
@@ -55,73 +56,121 @@ def admin_login(user, pw):
     cursor.execute("SELECT * FROM admin WHERE username=? AND password=?", (user, hash_password(pw)))
     return cursor.fetchone()
 
-# ================= ULTRA LUXURY CSS =================
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap" rel="stylesheet">
+# ================== SAMPLE STORIES ==================
+cursor.execute("SELECT COUNT(*) FROM stories")
+if cursor.fetchone()[0] == 0:
+    sample_stories = [
+        {
+            "name": "Sumit Bhardwaj",
+            "title": "Revolutionizing Facility Management",
+            "profile": "Senior Manager with 15+ years of project execution and maintenance experience.",
+            "story": "Sumit has led multiple high-profile projects in Gurugram, bringing efficiency and innovation to every site he manages.",
+            "image": "images/sumit.jpg",
+            "featured": 1
+        },
+        {
+            "name": "Radhika Mehra",
+            "title": "Empowering Women Entrepreneurs",
+            "profile": "Founder of Mehra Innovations, transforming local artisans' businesses.",
+            "story": "Radhika focuses on sustainable growth and has created a platform supporting hundreds of women in India.",
+            "image": "images/radhika.jpg",
+            "featured": 1
+        },
+        {
+            "name": "Anil Kapoor",
+            "title": "Tech Start-Up Visionary",
+            "profile": "Co-founder of SmartSolutions Tech, a SaaS platform for SMBs.",
+            "story": "Anil's vision is to simplify technology adoption for small businesses across India.",
+            "image": "images/anil.jpg",
+            "featured": 0
+        },
+        {
+            "name": "Priya Sharma",
+            "title": "Green Energy Advocate",
+            "profile": "CEO of EcoVolt, pioneering solar solutions in residential communities.",
+            "story": "Priya has implemented eco-friendly energy solutions for multiple premium housing societies.",
+            "image": "images/priya.jpg",
+            "featured": 0
+        },
+        {
+            "name": "Vikram Singh",
+            "title": "AI & Automation Specialist",
+            "profile": "Entrepreneur transforming industrial operations using AI-driven solutions.",
+            "story": "Vikram's projects are revolutionizing automation in manufacturing plants with predictive maintenance systems.",
+            "image": "images/vikram.jpg",
+            "featured": 0
+        }
+    ]
+    
+    for s in sample_stories:
+        # placeholder images if not exists
+        img_path = s["image"]
+        if not os.path.exists(img_path):
+            with open(img_path, "wb") as f:
+                f.write(b"")  # empty placeholder, replace later
+        cursor.execute("""
+            INSERT INTO stories (name, title, profile, story, image, featured, approved, created_at)
+            VALUES (?,?,?,?,?,?,1,?)
+        """, (s["name"], s["title"], s["profile"], s["story"], img_path, s["featured"], datetime.now().isoformat()))
+    conn.commit()
+
+# ================== ULTRA LUXURY CSS ==================
+luxury_style = """
 <style>
-body {background: linear-gradient(160deg,#0b0b0b,#1c1c1c); color:#fff; font-family:'Merriweather', serif;}
-h1,h2,h3 {color:#ffd700; text-shadow: 0px 0px 20px rgba(255,215,0,0.7);}
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap');
+
+body {background: linear-gradient(160deg, #0b0b0b, #1c1c1c); color:#fff; font-family:'Merriweather', serif;}
+h1,h2,h3 { color:#ffd700; text-shadow: 0px 0px 10px rgba(255,215,0,0.7); }
 .card {background:#1a1a1a; padding:25px; border-radius:20px; box-shadow:0 0 60px rgba(255,215,0,0.15); margin-bottom:30px; transition: transform 0.3s ease, box-shadow 0.3s ease;}
-.card:hover {transform: translateY(-10px); box-shadow:0 0 100px rgba(255,215,0,0.4);}
-.logout-btn {background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px; cursor:pointer;}
-.featured-carousel {display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior:smooth;}
+.card:hover { transform: translateY(-10px); box-shadow:0 0 100px rgba(255,215,0,0.4); }
+.logout-btn {background-color:#ffd700; color:#0b0b0b; font-weight:bold; border-radius:12px; padding:5px 15px; float:right; margin-top:-50px; cursor:pointer; }
+.featured-carousel {display:flex; overflow-x:auto; gap:25px; padding:20px 0; scroll-behavior: smooth;}
 .featured-card {min-width:320px; flex:0 0 auto; background:#222; border-radius:16px; padding:20px; box-shadow:0 0 40px rgba(255,215,0,0.2); transition: transform 0.3s ease;}
-.featured-card:hover {transform: translateY(-8px); box-shadow:0 0 70px rgba(255,215,0,0.5);}
-.counter {font-size:1.2rem; font-weight:bold; color:#ffd700;}
+.featured-card:hover { transform: translateY(-8px); box-shadow:0 0 70px rgba(255,215,0,0.5);}
+.counter { font-size:1.2rem; font-weight:bold; color:#ffd700; }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(luxury_style, unsafe_allow_html=True)
 
-today_str = date.today().isoformat()
-
-# ================= HEADER =================
+# ================== HEADER ==================
 st.markdown("<h1 style='text-align:center; font-size:3rem;'>THE EMERGING ICONS</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-size:1.2rem; color:#aaa;'>India’s Next Generation of Entrepreneurs</p>", unsafe_allow_html=True)
 st.divider()
 
-# ================= SIDEBAR =================
-menu = st.sidebar.radio(
-    "Navigation",
-    ["Home", "Featured Stories", "Submit Story", "Admin Login"]
-)
+# ================== SIDEBAR ==================
+menu = st.sidebar.radio("Navigation", ["Home", "Featured Stories", "Submit Story", "Admin Login"])
+today_str = date.today().isoformat()
 
-# ================= HOME =================
-if menu=="Home":
-    # Animated Hero Stats
-    cursor.execute("SELECT COUNT(DISTINCT name) FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?)", (today_str,))
-    total_entrepreneurs = cursor.fetchone()[0] or 0
-    cursor.execute("SELECT COUNT(*) FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?)", (today_str,))
-    total_stories = cursor.fetchone()[0] or 0
-    cursor.execute("SELECT SUM(likes) FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?)", (today_str,))
-    total_likes = cursor.fetchone()[0] or 0
-    cursor.execute("SELECT SUM(views) FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?)", (today_str,))
-    total_views = cursor.fetchone()[0] or 0
-    st.markdown(f"""
-    <div style='display:flex; justify-content:space-around; text-align:center; margin:30px 0;'>
-        <div><h2 style='color:#ffd700;'>{total_entrepreneurs}</h2><p style='color:#fff;'>Entrepreneurs</p></div>
-        <div><h2 style='color:#ffd700;'>{total_stories}</h2><p style='color:#fff;'>Stories</p></div>
-        <div><h2 style='color:#ffd700;'>{total_likes}</h2><p style='color:#fff;'>Likes</p></div>
-        <div><h2 style='color:#ffd700;'>{total_views}</h2><p style='color:#fff;'>Views</p></div>
-    </div>
-    """, unsafe_allow_html=True)
-
+# ================== HOME ==================
+if menu == "Home":
     # Featured Carousel
     cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1 AND (expiry_date IS NULL OR expiry_date>=?) ORDER BY created_at DESC", (today_str,))
     featured = cursor.fetchall()
     if featured:
+        st.markdown("<h2 style='color:#ffd700;'>⭐ Featured Entrepreneurs</h2>", unsafe_allow_html=True)
         st.markdown("<div class='featured-carousel'>", unsafe_allow_html=True)
         for f in featured:
             img_html = f"<img src='{f[5]}' width='100%' style='border-radius:12px; margin-bottom:10px;'/>" if f[5] else ""
-            st.markdown(f"<div class='featured-card'>{img_html}<h3>{f[2]}</h3><p><b>{f[1]}</b></p><p>{f[4][:120]}...</p><p class='counter'>❤️ {f[7]} | 👁 {f[8]}</p></div>", unsafe_allow_html=True)
+            card_html = f"""
+            <div class='featured-card'>
+                {img_html}
+                <h3>{f[2]}</h3>
+                <p><b>{f[1]}</b></p>
+                <p>{f[4][:120]}...</p>
+                <p class='counter'>❤️ {f[7]}  | 👁 {f[8]}</p>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Main stories
+    # Main Stories
     cursor.execute("SELECT * FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?) AND featured=0 ORDER BY created_at DESC", (today_str,))
     stories = cursor.fetchall()
     for s in stories:
         cursor.execute("UPDATE stories SET views=views+1 WHERE id=?", (s[0],))
         conn.commit()
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        col1,col2=st.columns([1,3])
+        col1, col2 = st.columns([1,3])
         if s[5] and os.path.exists(s[5]):
             col1.image(s[5], width=220)
         col2.subheader(s[2])
@@ -129,11 +178,11 @@ if menu=="Home":
         col2.write(s[4][:280]+"...")
         col2.markdown(f"<p class='counter'>❤️ {s[7]}  | 👁 {s[8]}</p>", unsafe_allow_html=True)
         if col2.button("Read Full Story", key=f"read{s[0]}"):
-            st.session_state["story_id"]=s[0]
+            st.session_state["story_id"] = s[0]
             st.experimental_rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= FULL STORY =================
+# ================== FULL STORY ==================
 if "story_id" in st.session_state:
     sid = st.session_state["story_id"]
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
@@ -144,9 +193,9 @@ if "story_id" in st.session_state:
     if story[5] and os.path.exists(story[5]):
         st.image(story[5], width=500)
     st.write(story[4])
-    st.markdown(f"<p class='counter'>❤️ {story[7]} | 👁 {story[8]}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p class='counter'>❤️ {story[7]}  | 👁 {story[8]}</p>", unsafe_allow_html=True)
     if st.button("❤️ Like Story"):
-        cursor.execute("UPDATE stories SET likes=likes+1 WHERE id=?", (sid,))
+        cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
         conn.commit()
         st.experimental_rerun()
     if st.button("⬅ Back"):
@@ -154,8 +203,8 @@ if "story_id" in st.session_state:
         st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= SUBMIT STORY =================
-if menu=="Submit Story":
+# ================== SUBMIT STORY ==================
+if menu == "Submit Story":
     st.subheader("Submit Your Entrepreneur Story")
     with st.form("submit"):
         name = st.text_input("Entrepreneur Name")
@@ -165,25 +214,27 @@ if menu=="Submit Story":
         image = st.file_uploader("Upload Cover Image", ["jpg","png"])
         submit = st.form_submit_button("Submit")
         if submit:
-            img_path=None
+            img_path = None
             if image:
-                img_path=f"images/{datetime.now().timestamp()}_{image.name}"
+                img_path = f"images/{datetime.now().timestamp()}_{image.name}"
                 with open(img_path,"wb") as f:
                     f.write(image.read())
-            cursor.execute("INSERT INTO stories (name,title,profile,story,image,created_at) VALUES (?,?,?,?,?,?)",
-                           (name,title,profile,story,img_path,datetime.now().isoformat()))
+            cursor.execute("""
+                INSERT INTO stories (name,title,profile,story,image,created_at)
+                VALUES (?,?,?,?,?,?)
+            """, (name,title,profile,story,img_path,datetime.now().isoformat()))
             conn.commit()
             st.success("Story submitted for admin approval.")
 
-# ================= ADMIN =================
-if menu=="Admin Login":
+# ================== ADMIN ==================
+if menu == "Admin Login":
     st.subheader("Admin Panel")
     if "admin" not in st.session_state:
-        user=st.text_input("Username")
-        pw=st.text_input("Password", type="password")
+        user = st.text_input("Username")
+        pw = st.text_input("Password", type="password")
         if st.button("Login"):
             if admin_login(user,pw):
-                st.session_state["admin"]=True
+                st.session_state["admin"] = True
                 st.experimental_rerun()
             else:
                 st.error("Invalid credentials")
@@ -191,7 +242,7 @@ if menu=="Admin Login":
         if st.button("Logout", key="logout"):
             del st.session_state["admin"]
             st.experimental_rerun()
-        # Pending approval
+
         cursor.execute("SELECT * FROM stories WHERE approved=0")
         pending = cursor.fetchall()
         for s in pending:
