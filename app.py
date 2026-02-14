@@ -196,8 +196,8 @@ if menu == "Admin Login":
         if st.button("Login"):
             if admin_login(user, pw):
                 st.session_state["admin_logged_in"] = True
-                st.success("Login successful!")
-                st.experimental_rerun()
+                st.success("Login successful! ✅")
+                # No st.experimental_rerun() here
             else:
                 st.error("Invalid credentials")
     else:
@@ -226,9 +226,11 @@ if menu == "Admin Login":
         if approve_id:
             cursor.execute("UPDATE stories SET approved=1 WHERE id=?", (approve_id,))
             conn.commit()
-            st.experimental_rerun()
+            st.success("Story approved ✅")
+            st.experimental_rerun()  # Safe here after DB update
 
         if feature_id:
             cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (feature_id,))
             conn.commit()
-            st.experimental_rerun()
+            st.success("Story featured ⭐")
+            st.experimental_rerun()  # Safe here after DB update
