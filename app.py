@@ -4,14 +4,14 @@ import hashlib
 import os
 from datetime import datetime, date
 
-# ================== CONFIG ==================
+# ================= CONFIG =================
 st.set_page_config(
     page_title="The Emerging Icons",
     page_icon="⭐",
     layout="wide"
 )
 
-# ================== DB SETUP ==================
+# ================= DB SETUP =================
 os.makedirs("images", exist_ok=True)
 conn = sqlite3.connect("data.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -48,7 +48,7 @@ if not cursor.fetchone():
     cursor.execute("INSERT INTO admin VALUES (?,?)", ("admin", password))
     conn.commit()
 
-# ================== FUNCTIONS ==================
+# ================= FUNCTIONS =================
 def hash_password(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
 
@@ -56,35 +56,28 @@ def admin_login(user, pw):
     cursor.execute("SELECT * FROM admin WHERE username=? AND password=?", (user, hash_password(pw)))
     return cursor.fetchone()
 
-# ================== PREMIUM LUXURY THEME ==================
-st.markdown("""
+# ================= LUXURY CSS =================
+luxury_style = """
 <style>
-body {
-    background-color:#0a0a0a; 
-    color:#fff; 
-    font-family:'Georgia', serif;
-}
-.card {
-    background:#121212; 
-    padding:25px; 
-    border-radius:16px; 
-    box-shadow:0 0 50px rgba(255,215,0,0.15); 
-    margin-bottom:30px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.card:hover { transform: translateY(-5px); box-shadow:0 0 60px rgba(255,215,0,0.3); }
+body { background:#0f0f0f; color:#fff; font-family:'Merriweather', serif; }
 h1,h2,h3 { color:#d4af37; }
-.metric { color:#aaa; font-size:14px; }
-.logout-btn {background-color:#d4af37; color:#0a0a0a; font-weight:bold; border-radius:8px; padding:5px 10px; margin-top:10px;}
+.card { background:#151515; padding:25px; border-radius:16px; box-shadow:0 0 50px rgba(255,215,0,0.15); margin-bottom:30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.card:hover { transform: translateY(-5px); box-shadow:0 0 80px rgba(255,215,0,0.4);}
+.logout-btn {background-color:#d4af37; color:#0f0f0f; font-weight:bold; border-radius:8px; padding:5px 12px; float:right; margin-top:-40px; }
+.featured-carousel { display:flex; overflow-x:auto; gap:20px; padding:20px 0; }
+.featured-card { min-width:300px; flex:0 0 auto; background:#1a1a1a; border-radius:16px; padding:15px; box-shadow:0 0 30px rgba(255,215,0,0.2); transition: transform 0.3s ease; }
+.featured-card:hover { transform: translateY(-5px); box-shadow:0 0 50px rgba(255,215,0,0.5);}
 </style>
-""", unsafe_allow_html=True)
+"""
 
-# ================== HEADER ==================
-st.markdown("<h1 style='text-align:center'>THE EMERGING ICONS</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:#aaa;font-size:18px;'>India’s Next Generation of Entrepreneurs</p>", unsafe_allow_html=True)
+st.markdown(luxury_style, unsafe_allow_html=True)
+
+# ================= HEADER =================
+st.markdown("<h1 style='text-align:center; font-size:3rem;'>THE EMERGING ICONS</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:1.2rem; color:#aaa;'>India’s Next Generation of Entrepreneurs</p>", unsafe_allow_html=True)
 st.divider()
 
-# ================== SIDEBAR ==================
+# ================= SIDEBAR =================
 menu = st.sidebar.radio(
     "Navigation",
     ["Home", "Featured Stories", "Submit Story", "Admin Login"]
@@ -92,67 +85,52 @@ menu = st.sidebar.radio(
 
 today_str = date.today().isoformat()
 
-# ================== HOME ==========
-# ================== HOME ==================
+# ================= HOME =================
 if menu == "Home":
-    # ---- Featured Stories Scroll ----
-    cursor.execute("""
-        SELECT * FROM stories 
-        WHERE approved=1 AND featured=1 AND (expiry_date IS NULL OR expiry_date>=?)
-        ORDER BY created_at DESC
-    """, (today_str,))
-    featured_stories = cursor.fetchall()
-
-    if featured_stories:
-        st.markdown("<h2 style='color:#d4af37'>⭐ Featured Entrepreneurs</h2>", unsafe_allow_html=True)
-        st.markdown("<div style='display:flex; overflow-x:auto; gap:20px; padding-bottom:20px;'>", unsafe_allow_html=True)
-        for s in featured_stories:
+    # Featured Carousel
+    cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1 AND (expiry_date IS NULL OR expiry_date>=?) ORDER BY created_at DESC", (today_str,))
+    featured = cursor.fetchall()
+    if featured:
+        st.markdown("<h2 style='color:#d4af37;'>⭐ Featured Entrepreneurs</h2>", unsafe_allow_html=True)
+        st.markdown("<div class='featured-carousel'>", unsafe_allow_html=True)
+        for f in featured:
+            img_html = f"<img src='{f[5]}' width='100%' style='border-radius:12px; margin-bottom:8px;'/>" if f[5] else ""
             card_html = f"""
-            <div class='card' style='min-width:300px; flex:0 0 auto;'>
-                <h3>{s[2]}</h3>
-                <p><b>{s[1]}</b></p>
-                <p>{s[4][:120]}...</p>
-                <p style='font-size:12px;color:#aaa;'>❤️ {s[7]}  | 👁 {s[8]}</p>
+            <div class='featured-card'>
+                {img_html}
+                <h3>{f[2]}</h3>
+                <p><b>{f[1]}</b></p>
+                <p>{f[4][:120]}...</p>
+                <p style='font-size:12px;color:#aaa;'>❤️ {f[7]}  | 👁 {f[8]}</p>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- Main Stories ----
-    cursor.execute("""
-        SELECT * FROM stories 
-        WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?) AND featured=0
-        ORDER BY created_at DESC
-    """, (today_str,))
+    # Main Stories
+    cursor.execute("SELECT * FROM stories WHERE approved=1 AND (expiry_date IS NULL OR expiry_date>=?) AND featured=0 ORDER BY created_at DESC", (today_str,))
     stories = cursor.fetchall()
-
     for s in stories:
-        cursor.execute("UPDATE stories SET views = views + 1 WHERE id=?", (s[0],))
+        cursor.execute("UPDATE stories SET views=views+1 WHERE id=?", (s[0],))
         conn.commit()
-
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         col1, col2 = st.columns([1,3])
-
         if s[5] and os.path.exists(s[5]):
             col1.image(s[5], width=220)
-
         col2.subheader(s[2])
         col2.write(f"**{s[1]}**")
         col2.write(s[4][:280]+"...")
         col2.caption(f"❤️ {s[7]}  | 👁 {s[8]}")
-
         if col2.button("Read Full Story", key=f"read{s[0]}"):
             st.session_state["story_id"] = s[0]
             st.experimental_rerun()
-
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ================== FULL STORY ==================
+# ================= FULL STORY =================
 if "story_id" in st.session_state:
     sid = st.session_state["story_id"]
     cursor.execute("SELECT * FROM stories WHERE id=?", (sid,))
     story = cursor.fetchone()
-
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.header(story[2])
     st.subheader(story[1])
@@ -160,29 +138,16 @@ if "story_id" in st.session_state:
         st.image(story[5], width=500)
     st.write(story[4])
     st.caption(f"❤️ {story[7]}  | 👁 {story[8]}")
-
     if st.button("❤️ Like Story"):
         cursor.execute("UPDATE stories SET likes = likes + 1 WHERE id=?", (sid,))
         conn.commit()
         st.experimental_rerun()
-
     if st.button("⬅ Back"):
         del st.session_state["story_id"]
         st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ================== FEATURED STORIES ==================
-if menu == "Featured Stories":
-    cursor.execute("SELECT * FROM stories WHERE approved=1 AND featured=1 AND (expiry_date IS NULL OR expiry_date>=?)", (today_str,))
-    feats = cursor.fetchall()
-    for s in feats:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader(s[2])
-        st.write(f"**{s[1]}**")
-        st.write(s[4][:300]+"...")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# ================== SUBMIT STORY ==================
+# ================= SUBMIT STORY =================
 if menu == "Submit Story":
     st.subheader("Submit Your Entrepreneur Story")
     with st.form("submit"):
@@ -192,14 +157,12 @@ if menu == "Submit Story":
         story = st.text_area("Full Story")
         image = st.file_uploader("Upload Cover Image", ["jpg","png"])
         submit = st.form_submit_button("Submit")
-
         if submit:
             img_path = None
             if image:
                 img_path = f"images/{datetime.now().timestamp()}_{image.name}"
                 with open(img_path,"wb") as f:
                     f.write(image.read())
-
             cursor.execute("""
                 INSERT INTO stories (name,title,profile,story,image,created_at)
                 VALUES (?,?,?,?,?,?)
@@ -207,56 +170,40 @@ if menu == "Submit Story":
             conn.commit()
             st.success("Story submitted for admin approval.")
 
-# ================== ADMIN ==================
+# ================= ADMIN =================
 if menu == "Admin Login":
     st.subheader("Admin Panel")
-
-    # LOGIN
     if "admin" not in st.session_state:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
         if st.button("Login"):
             if admin_login(user,pw):
                 st.session_state["admin"] = True
-                st.session_state["rerun"] = True
+                st.experimental_rerun()
             else:
                 st.error("Invalid credentials")
-
     else:
-        # LOGOUT
-        if st.button("Logout", key="logout_btn"):
+        # Logout button (premium top-right style)
+        if st.button("Logout", key="logout"):
             del st.session_state["admin"]
-            st.session_state["rerun"] = True
+            st.experimental_rerun()
 
+        # Pending stories with expiry date
         cursor.execute("SELECT * FROM stories WHERE approved=0")
         pending = cursor.fetchall()
-
         for s in pending:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.subheader(s[2])
             st.write(s[1])
-
-            # Expiry date input
             expiry = st.date_input("Set expiry date", value=date.today(), key=f"expiry_{s[0]}")
-
-            # Approve button
             if st.button("Approve", key=f"approve_{s[0]}"):
                 cursor.execute("UPDATE stories SET approved=1, expiry_date=? WHERE id=?", (expiry.isoformat(), s[0]))
                 conn.commit()
                 st.success(f"Story '{s[2]}' approved ✅")
-                st.session_state["rerun"] = True
-
-            # Feature button
+                st.experimental_rerun()
             if st.button("Feature", key=f"feature_{s[0]}"):
                 cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (s[0],))
                 conn.commit()
                 st.success(f"Story '{s[2]}' featured ⭐")
-                st.session_state["rerun"] = True
-
+                st.experimental_rerun()
             st.markdown("</div>", unsafe_allow_html=True)
-
-# SAFE RERUN
-if st.session_state.get("rerun", False):
-    st.session_state["rerun"] = False
-    st.experimental_rerun()
-
