@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS stories (
     likes INTEGER DEFAULT 0,
     views INTEGER DEFAULT 0,
     approved INTEGER DEFAULT 0,
-    created_at TEXT
+    created_at TEXT,
+    expiry_date TEXT
 )
 """)
 
@@ -39,13 +40,6 @@ CREATE TABLE IF NOT EXISTS admin (
     password TEXT
 )
 """)
-
-# Add expiry_date column if missing
-try:
-    cursor.execute("ALTER TABLE stories ADD COLUMN expiry_date TEXT")
-    conn.commit()
-except sqlite3.OperationalError:
-    pass  # column already exists
 
 # Default admin
 cursor.execute("SELECT * FROM admin")
@@ -62,22 +56,32 @@ def admin_login(user, pw):
     cursor.execute("SELECT * FROM admin WHERE username=? AND password=?", (user, hash_password(pw)))
     return cursor.fetchone()
 
-def luxury_css():
-    st.markdown("""
-    <style>
-    body {background-color:#0f0f0f; color:#fff; font-family:'Georgia', serif;}
-    .card {background:#151515; padding:25px; border-radius:16px; box-shadow:0 0 40px rgba(255,215,0,0.12); margin-bottom:30px;}
-    h1,h2,h3 {color:#d4af37;}
-    .metric {color:#999; font-size:14px;}
-    .logout-btn {background-color:#d4af37; color:#0f0f0f; font-weight:bold; border-radius:8px; padding:5px 10px;}
-    </style>
-    """, unsafe_allow_html=True)
-
-luxury_css()
+# ================== PREMIUM LUXURY THEME ==================
+st.markdown("""
+<style>
+body {
+    background-color:#0a0a0a; 
+    color:#fff; 
+    font-family:'Georgia', serif;
+}
+.card {
+    background:#121212; 
+    padding:25px; 
+    border-radius:16px; 
+    box-shadow:0 0 50px rgba(255,215,0,0.15); 
+    margin-bottom:30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover { transform: translateY(-5px); box-shadow:0 0 60px rgba(255,215,0,0.3); }
+h1,h2,h3 { color:#d4af37; }
+.metric { color:#aaa; font-size:14px; }
+.logout-btn {background-color:#d4af37; color:#0a0a0a; font-weight:bold; border-radius:8px; padding:5px 10px; margin-top:10px;}
+</style>
+""", unsafe_allow_html=True)
 
 # ================== HEADER ==================
 st.markdown("<h1 style='text-align:center'>THE EMERGING ICONS</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:#aaa'>India’s Next Generation of Entrepreneurs</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#aaa;font-size:18px;'>India’s Next Generation of Entrepreneurs</p>", unsafe_allow_html=True)
 st.divider()
 
 # ================== SIDEBAR ==================
@@ -111,7 +115,6 @@ if menu == "Home":
         if col2.button("Read Full Story", key=f"read{s[0]}"):
             st.session_state["story_id"] = s[0]
             st.experimental_rerun()
-
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ================== FULL STORY ==================
@@ -178,20 +181,22 @@ if menu == "Submit Story":
 if menu == "Admin Login":
     st.subheader("Admin Panel")
 
+    # LOGIN
     if "admin" not in st.session_state:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
-
         if st.button("Login"):
             if admin_login(user,pw):
                 st.session_state["admin"] = True
-                st.experimental_rerun()
+                st.session_state["rerun"] = True
             else:
                 st.error("Invalid credentials")
+
     else:
-        if st.button("Logout"):
+        # LOGOUT
+        if st.button("Logout", key="logout_btn"):
             del st.session_state["admin"]
-            st.experimental_rerun()
+            st.session_state["rerun"] = True
 
         cursor.execute("SELECT * FROM stories WHERE approved=0")
         pending = cursor.fetchall()
@@ -209,13 +214,18 @@ if menu == "Admin Login":
                 cursor.execute("UPDATE stories SET approved=1, expiry_date=? WHERE id=?", (expiry.isoformat(), s[0]))
                 conn.commit()
                 st.success(f"Story '{s[2]}' approved ✅")
-                st.experimental_rerun()
+                st.session_state["rerun"] = True
 
             # Feature button
             if st.button("Feature", key=f"feature_{s[0]}"):
                 cursor.execute("UPDATE stories SET featured=1 WHERE id=?", (s[0],))
                 conn.commit()
                 st.success(f"Story '{s[2]}' featured ⭐")
-                st.experimental_rerun()
+                st.session_state["rerun"] = True
 
             st.markdown("</div>", unsafe_allow_html=True)
+
+# SAFE RERUN
+if st.session_state.get("rerun", False):
+    st.session_state["rerun"] = False
+    st.experimental_rerun()
